@@ -1,7 +1,5 @@
 import sys
 
-from collections import namedtuple
-
 # Read data
 input_file = sys.argv[1]
 with open(input_file) as f:
