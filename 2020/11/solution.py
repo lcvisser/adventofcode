@@ -6,27 +6,11 @@ input_file = sys.argv[1]
 with open(input_file) as f:
     data = f.read()
 
-# data = """
-# L.LL.LL.LL
-# LLLLLLL.LL
-# L.L.L..L..
-# LLLL.LL.LL
-# L.LL.LL.LL
-# L.LLLLL.LL
-# ..L.L.....
-# LLLLLLLLLL
-# L.LLLLLL.L
-# L.LLLLL.LL
-# """
-
 layout = []
 for row in data.split('\n'):
     if len(row) > 0:
         layout.append(list(row))
-
-def print_layout(_layout):
-    for row in _layout:
-        print(' '.join(row))
+layout2 = deepcopy(layout)
 
 def num_occupied_adjacent(_layout, _i, _j):
     n = 0
@@ -50,9 +34,11 @@ def num_occupied_adjacent(_layout, _i, _j):
 def update_layout(_layout):
     new_layout = deepcopy(_layout)
     new_occupied = 0
-    for i, row in enumerate(layout):
+    for i, row in enumerate(_layout):
         for j, seat in enumerate(row):
-            n_occ = num_occupied_adjacent(_layout, i, j)
+            if seat in ('L', '#'):
+                n_occ = num_occupied_adjacent(_layout, i, j)
+
             if seat == '.':
                 new_layout[i][j] = '.'
             elif seat == 'L':
@@ -73,12 +59,71 @@ def update_layout(_layout):
 
 # Part 1: determine number of occupied seats when nothing changes anymore
 while True:
-    # print_layout(layout)
-    # print("---")
     new_layout, n = update_layout(layout)
     if new_layout == layout:
         break
     else:
         layout = new_layout
+
+print(f"Number of occupied seats: {n}")
+
+# Part 2: determine number of occupied seats with new rules
+def num_occupied_in_view(_layout, _i, _j):
+    n = 0
+    for s in (-1, 0, 1):
+        for t in (-1, 0, 1):
+            if s == 0 and t == 0:
+                pass
+            else:
+                u = 0
+                while True:
+                    u += 1
+                    x = _i + s * u
+                    y = _j + t * u
+                    if x < 0 or y < 0:
+                        break
+                    elif x >= len(_layout) or y >= len(_layout[0]):
+                        break
+                    else:
+                        if _layout[x][y] == '#':
+                            n += 1
+                            break
+                        elif _layout[x][y] == 'L':
+                            break
+
+    return n
+
+def update_layout2(_layout):
+    new_layout = deepcopy(_layout)
+    new_occupied = 0
+    for i, row in enumerate(_layout):
+        for j, seat in enumerate(row):
+            if seat in ('L', '#'):
+                n_occ = num_occupied_in_view(_layout, i, j)
+
+            if seat == '.':
+                new_layout[i][j] = '.'
+            elif seat == 'L':
+                if n_occ == 0:
+                    new_layout[i][j] = '#'
+                else:
+                    new_layout[i][j] = 'L'
+            elif seat == '#':
+                if n_occ >= 5:
+                    new_layout[i][j] = 'L'
+                else:
+                    new_layout[i][j] = '#'
+
+            if new_layout[i][j] == '#':
+                new_occupied += 1
+
+    return new_layout, new_occupied
+
+while True:
+    new_layout2, n = update_layout2(layout2)
+    if new_layout2 == layout2:
+        break
+    else:
+        layout2 = new_layout2
 
 print(f"Number of occupied seats: {n}")
