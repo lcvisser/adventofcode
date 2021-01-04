@@ -1,4 +1,5 @@
 import sys
+from math import prod
 
 # Read data
 input_file = sys.argv[1]
@@ -17,38 +18,28 @@ bus = schedule[0]
 print("First bus: {} (wait time: {}), number: {}".format(bus[0], bus[1], bus[0] * bus[1]))
 
 # Part 2: find timestamp t so that all busses listed depart at one minute intervals from t
-import time
-from math import prod
-
-
-# busses = "17,x,13,19"
-# busses = "67,7,59,61"
-# busses = "67,x,7,59,61"
-# busses = "67,7,x,59,61"
-# busses = "1789,37,47,1889"
-
 intervals = [int(v) if v != 'x' else -1 for v in busses.split(',')]
 offsets = list(range(len(intervals)))
-max_interval = max(intervals)
-max_offset = offsets[intervals.index(max_interval)]
-intervals, offsets = zip(*[(i, o) for i, o in zip(intervals, offsets) if i > 0])
+intervals, offsets = zip(*[(i, -o) for i, o in zip(intervals, offsets) if i > 0])
 
-ts1 = max_interval
-ts2 = prod(intervals)
-match1 = False
-match2 = False
-t0 = time.monotonic()
-n = 0
-while not (match1 or match2):
-    ts1 += max_interval
-    ts2 -= max_interval
-    match1 = all(x == 0 for x in [-(ts1 + o - max_offset) % v for v, o in zip(intervals, offsets)])
-    match2 = all(x == 0 for x in [-(ts2 + o - max_offset) % v for v, o in zip(intervals, offsets)])
-    n += 1
+def extended_gcd(a, b):
+    """Extended Euclidean algorithm"""
+    sp, sc = 1, 0
+    tp, tc = 0, 1
+    while b > 0:
+        a, q, b = b, a // b, a % b
+        sp, sc = sc, sp - q * sc
+        tp, tc = tc, tp - q * tc
 
-if match1:
-    ts = ts1 - max_offset
-elif match2:
-    ts = ts2 - max_offset
-print("First time for all busses: {}".format(ts))
-print(time.monotonic() - t0, n, match1, match2)
+    return a, sp, tp
+
+x = 0
+for i in range(len(intervals)):
+    N = prod(intervals[:i]) * prod(intervals[i + 1:])
+    _, m, M = extended_gcd(intervals[i], N)
+    x += offsets[i] * M * N
+
+lcm = prod(intervals)
+while x > lcm:
+     x -= lcm
+print("Timestamp: {}".format(x))
