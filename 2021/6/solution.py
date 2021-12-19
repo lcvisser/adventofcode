@@ -5,8 +5,6 @@ input_file = sys.argv[1]
 with open(input_file) as f:
     data = f.read()
 
-# data = "3,4,3,1,2"
-
 # Parse data
 initial_fish = [int(x) for x in data.strip().split(',')]
 
