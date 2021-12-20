@@ -1,3 +1,4 @@
+import copy
 import sys
 
 # Read data
@@ -14,8 +15,14 @@ for line in data.strip().split('\n'):
 class Simulation:
     def __init__(self, grid):
         self._grid = grid
-        self._width = len(grid[0])
         self._height = len(grid)
+        self._width = len(grid[0])
+
+        self._all_cells = set()
+        for i in range(self._height):
+            for j in range(self._width):
+                self._all_cells.add((i, j))
+
         self._needs_to_flash = []
         self._has_flashed = []
         self.num_flashes = 0
@@ -68,20 +75,34 @@ class Simulation:
                 self.increment_nearby(r, c)
                 self.check_nearby(r, c)
 
-        # Reset the energy levels from octopuses that have flashed
-        while self._has_flashed:
-            r, c = self._has_flashed.pop(0)
-            self._grid[r][c] = 0
+        # Check if the entire grid has flashed
+        if set(self._has_flashed) == self._all_cells:
+            return True
+        else:
+            # Reset the energy levels from octopuses that have flashed
+            while self._has_flashed:
+                r, c = self._has_flashed.pop(0)
+                self._grid[r][c] = 0
+            return False
 
     def run_one_step(self):
         """Run a single simulation step."""
         self.increment_all()
         self.check_all()
-        self.flash()
+        return self.flash()
 
 # Part 1: simulate 100 steps
-sim = Simulation(octopuses)
+sim = Simulation(copy.deepcopy(octopuses))
 for i in range(100):
     sim.run_one_step()
 
 print(f"Number of observed flashes: {sim.num_flashes}")
+
+# Part 2: simulate until all octopuses sync
+sim = Simulation(copy.deepcopy(octopuses))
+synced = False
+iteration = 0
+while not synced:
+    synced = sim.run_one_step()
+    iteration += 1
+print(f"First iteration to sync: {iteration}")
