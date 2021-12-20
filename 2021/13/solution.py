@@ -32,28 +32,39 @@ for x, y in dots:
 
 # Helper function to fold along y-axis
 def fold_along_y(grid, fold_coord):
-    max_y = len(grid)
-    for y in reversed(range(fold_coord + 1, max_y)):
-        target_y = max_y - y - 1
-        row_to_fold = grid.pop(y)
-        for x, value in enumerate(row_to_fold):
-            grid[target_y][x] += value
+    if any(grid[fold_coord]):
+        raise ValueError(f"nonempty fold line at {fold_coord}")
 
+    max_y = len(grid) - 1
+    num_lines_to_fold = max_y - fold_coord
+    for y in reversed(range(num_lines_to_fold)):
+        # Determine target opposite the fold
+        from_y = fold_coord + 1 + y
+        to_y = fold_coord - 1 - y
+
+        # Add the row onto its target row
+        row_to_fold = grid.pop(from_y)
+        for x, value in enumerate(row_to_fold):
+            grid[to_y][x] += value
+
+    # Pop the fold line
     grid.pop(fold_coord)
     return grid
 
 # Helper function to process a single fold instruction
 def fold(grid, dim, fold_coord):
-    if dim == 'x':
+    if dim == 'y':
+        # Fold along y-axis
+        new_grid = fold_along_y(grid, fold_coord)
+    elif dim == 'x':
         # Transpose the grid and then fold along y-axis
         transposed_grid = [list(c) for c in zip(*grid)]
         transposed_folded_grid = fold_along_y(transposed_grid, fold_coord)
-        grid = [list(c) for c in zip(*transposed_folded_grid)]
-    elif dim == 'y':
-        # Fold along y-axis
-        grid = fold_along_y(grid, fold_coord)
 
-    return grid
+        # Transpose back
+        new_grid = [list(c) for c in zip(*transposed_folded_grid)]
+
+    return new_grid
 
 # Part 1: count visible dots after 1 folding instruction
 grid1 = fold(copy.deepcopy(grid), *fold_instructions[0])
@@ -64,3 +75,16 @@ for row in grid1:
             dot_count += 1
 
 print(f"Number of dots after one fold: {dot_count}")
+
+# Part 2: complete folding and decode
+def print_grid(grid):
+    for i, row in enumerate(grid):
+        print(''.join(' ' if x == 0 else '#' for x in row))
+    print()
+
+grid2 = copy.deepcopy(grid)
+for dim, fold_coord in fold_instructions:
+    grid2 = fold(grid2, dim, fold_coord)
+
+print("Sheet after complete folding:")
+print_grid(grid2)
