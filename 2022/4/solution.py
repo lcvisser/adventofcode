@@ -24,3 +24,14 @@ for line in lines:
         double_assigned_count += 1
 
 print(f"Number of double assignments: {double_assigned_count}")
+
+# Part 2: find partly overlapping pair assignments
+double_assigned_count = 0
+for line in lines:
+    assignment1, assignment2 = line.split(',')
+    sectors1 = assignment_to_sectors(assignment1)
+    sectors2 = assignment_to_sectors(assignment2)
+    if sectors1 & sectors2:
+        double_assigned_count += 1
+
+print(f"Number of partly double assignments: {double_assigned_count}")
