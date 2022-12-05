@@ -1,4 +1,5 @@
 import sys
+import copy
 
 # Read data
 input_file = sys.argv[1]
@@ -20,13 +21,15 @@ while lines[i].strip():
             if stack_number not in stacks.keys():
                 stacks[stack_number] = []
 
-        # Crate
+        # Put crate on stack (top stack is first element)
         if c == '[':
             stacks[stack_number].append(lines[i][n + 1])
 
     i += 1
 
 # Parse the instructions
+stacks1 = copy.deepcopy(stacks)
+stacks2 = copy.deepcopy(stacks)
 while i < len(lines):
     if lines[i].strip() == '':
         i += 1
@@ -43,12 +46,21 @@ while i < len(lines):
     source_stack = int(s)
     dest_stack = int(d)
 
-    # Top crate is the first element in the list
+    # Part 1: restack crates one by one
     for j in range(amount):
-        stacks[dest_stack].insert(0, stacks[source_stack].pop(0))
+        stacks1[dest_stack].insert(0, stacks1[source_stack].pop(0))
+
+    # Part 2: restack crates all at once
+    stacks2[dest_stack] = stacks2[source_stack][0:amount] + stacks2[dest_stack]
+    for j in range(amount):
+        stacks2[source_stack].pop(0)
 
     i += 1
 
 # Part 1: top crate after restacking
-top_crates = ''.join(s[0] for s in stacks.values())
-print(f"Top crates: {top_crates}")
+top_crates1 = ''.join(s[0] for s in stacks1.values())
+print(f"Top crates: {top_crates1}")
+
+# Part 2: top crate after restacking
+top_crates2 = ''.join(s[0] for s in stacks2.values())
+print(f"Top crates: {top_crates2}")
