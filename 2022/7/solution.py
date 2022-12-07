@@ -36,3 +36,14 @@ for line in lines:
 max_size = 100000
 total_size = sum(filter(lambda x: x <= max_size, dirsizes.values()))
 print(f"Sum of directory sizes: {total_size}")
+
+# Part 2: find the smalled directory to delete
+disk_size = 70000000
+space_needed = 30000000
+space_used = dirsizes['/']
+space_available = disk_size - space_used
+min_space_to_free = space_needed - space_available
+for dirname, size in sorted(dirsizes.items(), key=lambda s: s[1]):
+    if size > min_space_to_free:
+        print(f"Directory to delete: {dirname}, size={size}")
+        break
