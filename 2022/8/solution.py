@@ -34,9 +34,9 @@ for row in range(grid_dim[0]):
 print(f"Total number of trees visible: {total_visible}")
 
 # Part 2: highest scenic score
-from itertools import takewhile
 def count_visible(idx, lst):
     this_tree_height = lst[idx]
+
     num_visible_before = 0
     for t in reversed(range(0, idx)):
         num_visible_before += 1
