@@ -22,8 +22,6 @@ def follow(posH, posT):
             posT[1] += int(math.copysign(1, posH[1] - posT[1]))
         elif posT[1] == posH[1]:
             posT[0] += int(math.copysign(1, posH[0] - posT[0]))
-        else:
-            ValueError("huh?")
     else:
         # Diagonal move to catch up
         posT[0] += int(math.copysign(1, posH[0] - posT[0]))
