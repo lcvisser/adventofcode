@@ -29,6 +29,12 @@ while program:
     if cycle in reg_values_at_cycle.keys():
         reg_values_at_cycle[cycle] = reg
 
+    # Determine pixel value (note is 0-based, but I count cycle 1-based for no good reason)
+    if reg - 1 <= (cycle - 1) % 40 <= reg + 1:
+        print('#', end='')
+    else:
+        print('.', end='')
+
     # End of cycle: process work on stack
     if stack:
         v = stack.pop(0)
@@ -36,7 +42,15 @@ while program:
 
     cycle += 1
 
+    # New row of pixels every 40th cycle
+    if (cycle - 1) % 40 == 0:
+        print()
+
+print()
+
 # Part 1: sum of signal strengths
 signal_strengths = [s * v for s, v in reg_values_at_cycle.items()]
 sum_of_signal_strengths = sum(signal_strengths)
 print(f"Sum of signal strengths: {sum_of_signal_strengths}")
+
+# Part 2: see console output
