@@ -1,5 +1,4 @@
 import sys
-import collections
 import math
 
 # Read data
@@ -71,13 +70,15 @@ for _ in range(20):
 mb = sorted([m.number_of_items_inspected for m in monkeys1.values()], reverse=True)
 print(f"Level of monkey business: {mb[0] * mb[1]}")
 
-# Prepare for part 2
+# Prepare for part 2: extend the items list to max. number of items so that no list extension is needed
 monkeys2 = parse_input(data)
 num_items = sum(len(m.items) for m in monkeys2.values())
 for monkey in monkeys2.values():
     monkey.iter = len(monkey.items)
     monkey.items.extend([0] * (num_items - len(monkey.items)))
 
+# Without the division by 3, the worry levels get really big really fast. Since we only need to act on the remainder,
+# divide by the product of all divisors to keep the "common" remainder
 prod_div = math.prod(m.divisor for m in monkeys2.values())
 
 # Play rounds for part 2
