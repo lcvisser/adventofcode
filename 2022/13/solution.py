@@ -1,4 +1,5 @@
 import sys
+import copy
 
 # Read data
 input_file = sys.argv[1]
@@ -64,3 +65,35 @@ for index, pair in enumerate(data.strip().split("\n\n")):
         sum_correct_indices += (index + 1)
 
 print(f"Sum of indices: {sum_correct_indices}")
+
+# Part 2: compute decoder key
+messages = []
+
+def insert_packet(packet):
+    for i, msg in enumerate(messages):
+        # If check_correct_order didn't mutate the lists, we wouldn't need copies here
+        if not check_correct_order(copy.deepcopy(msg), copy.deepcopy(packet))[0]:
+            # [msg, packet] is not the correct order, so packet must go before msg
+            messages.insert(i, packet)
+            break
+    else:
+        messages.append(packet)
+
+# Sort the packets
+for line in data.strip().split('\n'):
+    if line == '':
+        continue
+
+    packet = eval(line)
+    insert_packet(packet)
+
+# Insert the divider packets
+divider1 = [[2]]
+divider2 = [[6]]
+insert_packet(divider1)
+insert_packet(divider2)
+
+# Compute the decoder key
+d1 = messages.index(divider1) + 1
+d2 = messages.index(divider2) + 1
+print(f"Decoder key: {d1 * d2}")
