@@ -1,19 +1,17 @@
 import sys
+import copy
 
 # Read data
 input_file = sys.argv[1]
 with open(input_file) as f:
     data = f.read()
 
-data3 = """
-498,4 -> 498,6 -> 496,6
-503,4 -> 502,4 -> 502,9 -> 494,9
-"""
-
+# Sand producer location
 producer_coord = (500, 0)
 max_x, max_y = producer_coord
 min_x = producer_coord[0]
 
+# Parse data for rock segments
 rock_segments = []
 for line in data.strip().split('\n'):
     prev = None
@@ -32,19 +30,14 @@ for line in data.strip().split('\n'):
             rock_segments.append(segment)
             prev = curr
 
+# Grid markers
 producer = '+'
 air = '.'
 rock = '#'
 sand = 'o'
 
-def print_grid(_grid):
-    for i, line in enumerate(_grid):
-        print(f"{i:4d} " + ''.join(line[min_x-1:]) + air)
-
-    print(f"{len(grid):4d} " + air * (max_x - min_x + 3))
-    print()
-
-grid = [[air] * (max_x + 1) for _ in range(max_y + 1)]
+# Prepare the grid (sand will flow diagonally, so make it wide enough for that)
+grid = [[air] * (max_x + max_y) for _ in range(max_y + 1)]
 for segment in rock_segments:
     ss, se = segment
     if ss[1] == se[1]:
@@ -65,41 +58,60 @@ for segment in rock_segments:
             for i in range(se[1], ss[1] + 1):
                 grid[i][ss[0]] = rock
 
-
+# Show initial grid
 px, py = producer_coord
 grid[py][px] = producer
 
-# print("Initial grid")
-# print_grid(grid)
-sand_count = 0
-dropped_into_void = False
-while not dropped_into_void:
-    sandx, sandy = producer_coord
-    while sandy < max_y:
-        if grid[sandy + 1][sandx] == air:
-            # go straight down
-            sandy += 1
-        elif grid[sandy + 1][sandx - 1 ] == air:
-            # down left
-            sandx -= 1
-            sandy += 1
-        elif grid[sandy + 1][sandx + 1 ] == air:
-            # down right
-            sandx += 1
-            sandy += 1
-        else:
-            # stop
-            grid[sandy][sandx] = sand
-            break
-    else:
-        dropped_into_void = True
+# Propagate sand
+def drop_sand(_grid, _max_y):
+    sand_count = 0
+    dropped_into_void = False
+    stuck_at_start = False
+    while not dropped_into_void and not stuck_at_start:
+        sandx, sandy = producer_coord
+        while sandy < _max_y:
+            if _grid[sandy + 1][sandx] == air:
+                # Go straight down
+                sandy += 1
+            elif _grid[sandy + 1][sandx - 1 ] == air:
+                # Go down and to left
+                sandx -= 1
+                sandy += 1
+            elif _grid[sandy + 1][sandx + 1 ] == air:
+                # Go down and to the right
+                sandx += 1
+                sandy += 1
+            else:
+                # Stop
+                _grid[sandy][sandx] = sand
 
-    sand_count += 1
-    # print(f"After sand {sand_count}")
-    # print_grid(grid)
+                if (sandx, sandy) == producer_coord:
+                    stuck_at_start = True
+
+                break
+        else:
+            dropped_into_void = True
+
+        sand_count += 1
+
+    return sand_count
+
+# Grid copies
+grid1 = copy.deepcopy(grid)
+grid2 = copy.deepcopy(grid)
 
 # Last sand unit counted fell down, so n - 1 are at rest
-number_of_resting_units = sand_count - 1
+number_of_resting_units1 = drop_sand(grid1, max_y) - 1
 
 # Part 1: number of sand units resting
-print(f"Number of sand that came to rest: {sand_count - 1}")
+print(f"Number of sand that came to rest: {number_of_resting_units1}")
+
+# Add floor
+grid2.append([air] * len(grid[0]))
+grid2.append([rock] * len(grid[0]))
+
+# Now all units should be counted
+number_of_resting_units2 = drop_sand(grid2, max_y + 2)
+
+# Part 2: number of sand units resting on the floor
+print(f"Number of sand that came to rest on the floor: {number_of_resting_units2}")
