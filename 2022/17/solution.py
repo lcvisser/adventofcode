@@ -2,12 +2,15 @@ import sys
 import collections
 
 # Read data
-input_file = sys.argv[1]
-with open(input_file) as f:
-    data = f.read()
+# input_file = sys.argv[1]
+# with open(input_file) as f:
+#     data = f.read()
 
-dataex = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
+data = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
+
+# Parse data
 jets = collections.deque(1 if j == '>' else -1 for j in data.strip())
+num_jets = len(jets)
 
 # Rocks, defined bottom to top
 rocks = collections.deque([
@@ -17,6 +20,7 @@ rocks = collections.deque([
     (0x1 << 4, 0x1 << 4, 0x1 << 4, 0x1 << 4),  # |
     (0x3 << 3, 0x3 << 3)  # 2x2 cube
 ])
+num_rocks = len(rocks)
 
 
 # Helper function to push a rock left or right
@@ -69,9 +73,21 @@ def drop(target_rock_count):
         while cave[-1] == 0:
             cave.pop()
 
+        if cave[-1] == 127:
+            print(rock_count)
+
         rock_count += 1
 
     return len(cave) - 1
 
 # Part 1: drop 2022 rocks
-print(f"Rock height after 2022 rocks: {drop(2022)}")
+h = drop(2022)
+print(f"Rock height after 2022 rocks: {h}")
+
+# Part 2: drop a lot of rocks
+desired_rock_count = 1000000000000
+min_cycle = num_jets * num_rocks
+drop(1000000000000)
+
+# 1514285714288 <--
+# 1514285714287
