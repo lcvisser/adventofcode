@@ -6,8 +6,6 @@ input_file = sys.argv[1]
 with open(input_file) as f:
     data = f.read()
 
-data_ex = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
-
 # Parse data
 jets = tuple(1 if j == '>' else -1 for j in data.strip())
 num_jets = len(jets)
@@ -64,8 +62,8 @@ def drop(target_rock_count):
     # Cave as a stack, growing on the right as we go up
     cave = [0x7f]
 
-    # Keep a cache of cave/rock/jet combos to see if we're repeating
-    seen_combos = {}
+    # Keep a cache of cave/rock/jet comboinations to see if we're repeating
+    seen_combinations = {}
     extra_heigth = 0
     cycle_found = False
 
@@ -84,12 +82,12 @@ def drop(target_rock_count):
 
         # Determien if we are repeating
         if not cycle_found:
-            combo = (tuple(cave[-depth:]), rock_index, jet_index)
-            if combo in seen_combos.keys():
+            combination = (tuple(cave[-depth:]), rock_index, jet_index)
+            if combination in seen_combinations.keys():
                 # Determine repeate cycle parameters
-                cycle_offset = list(seen_combos.keys()).index(combo)
-                cycle_length = len(seen_combos.keys()) - cycle_offset
-                cycle_growth = len(cave) - 1 - seen_combos[combo]
+                cycle_offset = list(seen_combinations.keys()).index(combination)
+                cycle_length = len(seen_combinations.keys()) - cycle_offset
+                cycle_growth = len(cave) - 1 - seen_combinations[combination]
                 extra_cycles = (target_rock_count - rock_count) // cycle_length
 
                 # Fast-forward
@@ -97,7 +95,7 @@ def drop(target_rock_count):
                 rock_count += extra_cycles * cycle_length
                 cycle_found = True
             else:
-                seen_combos[combo] = len(cave) - 1
+                seen_combinations[combination] = len(cave) - 1
 
         # Get rock
         rock = rocks[rock_index]
@@ -107,12 +105,15 @@ def drop(target_rock_count):
         for _ in range(rock_size + 3):
             cave.append(0)
 
+        # Go down the cave, pushing the rock before every step
         for i in reversed(range(1, len(cave) - rock_size + 1)):
             jet_push = jets[jet_index]
             jet_index = (jet_index + 1) % num_jets
 
             cave_section = tuple(cave[i - 1:i + rock_size])
             rock, stopped, section_update = step(jet_push, rock, cave_section)
+
+            # "Draw" the rock only when it has stopped
             if stopped:
                 for x, r in enumerate(section_update):
                     cave[i + x] = r
@@ -123,9 +124,11 @@ def drop(target_rock_count):
         while cave[-1] == 0:
             cave.pop()
 
+        # Next rock
         rock_count += 1
         rock_index = (rock_index + 1) % num_rocks
 
+    # Total height minus the floor
     return len(cave) - 1 + extra_heigth
 
 # Part 1: drop 2022 rocks
