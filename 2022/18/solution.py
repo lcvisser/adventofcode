@@ -95,46 +95,37 @@ potential_pockets2 = set((x, y, z) for (x, z), y in pockets_xz)
 potential_pockets3 = set((x, y, z) for (y, z), x in pockets_yz)
 potential_pockets = potential_pockets1.intersection(potential_pockets2).intersection(potential_pockets3)
 
-# Check if the potential pockets are actual pockets by determining of there is a way out
-while potential_pockets:
-    p = potential_pockets.pop()
-    is_pocket = True
+# Flood-fill to detect which places are on the outside
+start = (0, 0, 0)
+assert start not in cubes
+filled = set()
+to_visit = [start]
+while to_visit:
+    v = to_visit.pop(0)
+    x, y, z = v
 
-    # DFS to find a way out
-    to_visit = [(p, [])]
-    visited = set()
-    while to_visit:
-        v, route = to_visit.pop(0)
+    if v not in filled:
+        filled.add(v)
 
-        if v[0] in (0, maxx) or v[1] in (0, maxy) or v[2] in (0, maxz):
-            # Found a way out, so starting point was not a pocket
-            is_pocket = False
+    neighbors = [
+        (x - 1, y, z),
+        (x + 1, y, z),
+        (x, y - 1, z),
+        (x, y + 1, z),
+        (x, y, z - 1),
+        (x, y, z + 1)
+    ]
 
-            # Remove all places we visited from the potential pockets, since obviously they are not pockets either
-            for c in route + [v]:
-                potential_pockets.discard(c)
+    for w in filter(lambda _w: 0 <= _w[0] <= maxx and 0 <= _w[1] <= maxy and 0 <= _w[2] <= maxz, neighbors):
+        if w not in filled and w not in to_visit and w not in cubes:
+            to_visit.append(w)
 
-            break
+# Find the actual pockets by removing the filled places from the set of potential pockets
+actual_pockets = potential_pockets.difference(filled)
 
-        if v not in visited:
-            visited.add(v)
-            x, y, z = v
-            neighbors = [
-                (x - 1, y, z),
-                (x + 1, y, z),
-                (x, y - 1, z),
-                (x, y + 1, z),
-                (x, y, z - 1),
-                (x, y, z + 1)
-            ]
-            for w in neighbors:
-                if w not in cubes and w not in visited:
-                    to_visit.insert(0, (w, route + [v]))
-
-    # If it was an actual pocket, fill it up, so it is not counted
-    if is_pocket:
-        cubes.append(p)
-        add_to_planes(*p)
+# Now really fill the actual pockets so they don't get counted
+for p in actual_pockets:
+    add_to_planes(*p)
 
 # Count again the number of faces, but now with all the pockets filled
 xy_faces, _ = count_faces(XY)
