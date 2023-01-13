@@ -8,10 +8,8 @@ with open(input_file) as f:
 # Parse data
 lines = data.strip().split('\n')
 
-
 # A = rock, B = paper, C = scissors
 # X = rock, Y = paper, Z = scissors
-
 score_for_shape = {'X': 1, 'Y': 2, 'Z': 3}
 
 def outcome(my_shape, opp_shape):

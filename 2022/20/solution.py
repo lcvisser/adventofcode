@@ -5,7 +5,6 @@ input_file = sys.argv[1]
 with open(input_file) as f:
     data = f.read()
 
-
 # Parse data
 encrypted_data = [int(x) for x in data.strip().split('\n')]
 
