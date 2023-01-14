@@ -83,12 +83,14 @@ pressure_release30 = find_paths(30)
 max_p1 = max(pressure_release30.values())
 print(f"Maximum pressure release working alone: {max_p1}")
 
-# Part 2: maximum pressure release working with the elephant
+# Find all possible paths that can be traversed in 26 minutes
 pressure_release26 = find_paths(26, max_p1 / 2)  # assume that together we do at least as good of a job as working alone
 max_p2 = 0
 for my_route, elephant_route in itertools.combinations(pressure_release26.keys(), 2):
+    # Consider any combination of paths that takes me and the elephant to unique valves
     if set(my_route).isdisjoint(set(elephant_route)):
         p = pressure_release26[my_route] + pressure_release26[elephant_route]
         max_p2 = max(max_p2, p)
 
+# Part 2: maximum pressure release working with the elephant
 print(f"Maximum pressure release working together with the elephant: {max_p2}")
