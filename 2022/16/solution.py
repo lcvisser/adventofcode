@@ -1,11 +1,12 @@
 import sys
+import itertools
 import re
 import typing
 
 # Read data
-input_file = sys.argv[1]
-with open(input_file) as f:
-    data = f.read()
+#input_file = sys.argv[1]
+#with open(input_file) as f:
+#    data = f.read()
 
 data = """
 Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
@@ -19,7 +20,6 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
-
 
 class Valve(typing.NamedTuple):
     name: str
@@ -68,65 +68,63 @@ dist_matrix = {src: {dst: bfs(src, dst) for dst in valves.keys()} for src in val
 # Do a depth-first search for all possible paths within 30 minutes
 t_end = 30
 max_p1 = 0
-to_visit = [(0, "AA", [], 0)]  # time, current valve, route so far, pressure release so far
-while to_visit:
-    t, v, route, p = to_visit.pop(0)
+to_process = [(0, "AA", 0, [])]  # time, current valve, pressure release so faf, visited
+while to_process:
+    t, v, p, visited = to_process.pop(0)
 
     # Keep track of maximum pressure release
-    if p > max_p1:
-        max_p1 = p
+    max_p1 = max(max_p1, p)
 
     # Find all reachable (t < 30 min) and useful (flow rate > 0) valves
     possible_dest = [
-        (w, dt) for w, dt in dist_matrix[v].items() if w != v and
-                                                       w not in route and
-                                                       t + dt + 1 < t_end
-                                                       and valves[w].flowrate != 0
+        (t + dt + 1, w, p + (t_end - (t + dt + 1)) * valves[w].flowrate)
+            for w, dt in dist_matrix[v].items() if w != v and
+                                                   w not in visited and
+                                                   t + dt + 1 < t_end and
+                                                   valves[w].flowrate > 0
     ]
 
-    # Determine if we have somewhere to go still
-    if possible_dest:
-        for w, dt in possible_dest:
-            travel_plus_open_time = dt + 1  # 1 minute to open
-            arrival_time = t + travel_plus_open_time
-            pressure_release = p + (t_end - arrival_time) * valves[w].flowrate
-            to_visit.insert(0, (arrival_time, w, route + [w], pressure_release))
-
+    # Go to remaning destinations
+    for arrival_time, w, p in possible_dest:
+        to_process.insert(0, (arrival_time, w, p, visited + [v]))
 
 # Part 1: maximum pressure release working alone
 print(f"Maximum pressure release working alone: {max_p1}")
 
-# Do a depth-first search of all possible path combinations within 26 minutes
+# Do a depth-first search for all possible combinations of visits within 26 minutes
 t_end = 26
 max_p2 = 0
-to_visit = [(0, "AA", [], 0, 0)]  # time, current valve, route so far, time of other, pressure release so far
-while to_visit:
-    t, v, route, t_other, p = to_visit.pop(0)
-    if route:
-        v_other = route[-1]
-    else:
-        v_other = "AA"
+to_process = [((0, "AA", 0), (0, "AA", 0), [])]  # time, current valve and pressure release for me and elephant; visited
+while to_process:
+    me, elephant, visited = to_process.pop(0)
+    mt, mloc, mp = me
+    et, eloc, ep = elephant
 
     # Keep track of maximum pressure release
-    if p >= max_p2:
-        max_p2 = p
+    max_p2 = max(max_p2, mp + ep)
 
-    # Find all reachable (t < 26 min) and useful (flow rate > 0) valves
-    possible_dest = [
-        (w, dt) for w, dt in dist_matrix[v_other].items() if w not in [v, v_other] and
-                                                             w not in route and
-                                                             t_other + dt + 1 < t_end
-                                                             and valves[w].flowrate != 0
+    # Find all reachable (t < 26 min) and useful (flow rate > 0) valves for me
+    my_possible_dest = [
+        (mt + dt + 1, v, mp + (t_end - (mt + dt + 1)) * valves[v].flowrate)
+            for v, dt in dist_matrix[mloc].items() if v != mloc and
+                                                      v not in visited and
+                                                      mt + dt + 1 < t_end and
+                                                      valves[v].flowrate > 0
     ]
 
-    # Determine if we have somewhere to go still
-    if possible_dest:
-        for w, dt in possible_dest:
-            travel_plus_open_time = dt + 1  # 1 minute to open
-            arrival_time = t_other + travel_plus_open_time
-            pressure_release = p + (t_end - arrival_time) * valves[w].flowrate
-            to_visit.insert(0, (arrival_time, w, route + [v], t, pressure_release))
+    # Find all reachable (t < 26 min) and useful (flow rate > 0) valves for the elephant
+    elephant_possible_dest = [
+        (et + dt + 1, w, ep + (t_end - (et + dt + 1)) * valves[w].flowrate)
+            for w, dt in dist_matrix[eloc].items() if w != eloc and
+                                                      w not in visited and
+                                                      et + dt + 1 < t_end and
+                                                      valves[w].flowrate > 0
+    ]
 
+    # Go to remaining destinations (all combinations thereof)
+    for d1, d2 in itertools.product(my_possible_dest, elephant_possible_dest):
+        if d1[1] != d2[1]:  # don't go to the same valve
+            to_process.insert(0, (d1, d2, visited + [d1[1], d2[1]]))
 
 # Part 2: maximum pressure release working with the elephant
 print(f"Maximum pressure release working together with the elephant: {max_p2}")
