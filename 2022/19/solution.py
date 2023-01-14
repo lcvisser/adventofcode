@@ -1,95 +1,120 @@
+import sys
 import collections
+import functools
 import re
 
+# Read data
+input_file = sys.argv[1]
+with open(input_file) as f:
+    data = f.read()
 
-data = """
+dataex = """
 Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
 Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.
 """
 
-robot_descriptor = re.compile(r"Each ([a-z]+) robot costs ([0-9]+) ([a-z]+)(?: and ([0-9]+) ([a-z]+)(?: and )?)*\.")
-
 # Parse data
+robot_descriptor = re.compile(r"Each ([a-z]+) robot costs ([0-9]+) ([a-z]+)(?: and ([0-9]+) ([a-z]+)(?: and )?)*\.")
 blueprints = {}
-
 materials = ("ore", "clay", "obsidian", "geode")
-RobotCosts = collections.namedtuple("RobotCosts", materials, defaults=[0] * len(materials))
-
 for line in data.strip().split('\n'):
     blueprintstr, robotstr = line.split(':')
     blueprint_id = int(blueprintstr[len("Blueprint "):])
 
-    robot_costs = {}
+    robot_costs = [None, None, None, None]
     robots = robot_descriptor.findall(robotstr)
     for purpose, *costs in robots:
-        robot_costs[purpose] = RobotCosts(**{m: int(c) for m, c in zip(costs[1::2], costs[0::2]) if m != ''})
+        parsed_costs = {m: int(c) for m, c in zip(costs[1::2], costs[0::2]) if m != ''}
+        robot_costs[materials.index(purpose)] = tuple(parsed_costs.get(m, 0) for m in materials)
 
-    blueprints[blueprint_id] = robot_costs
-
-
-robot_costs = blueprints[1]
+    blueprints[blueprint_id] = tuple(robot_costs)
 
 
-priorities = ("geode", "obsidian", "clay", "ore")
-collected_materials = {m: 0 for m in materials}
-robots_built = {m: 0 for m in materials}
-robots_built["ore"] = 1
-robot_build_queue = []
-for i in range(24):
-    print(f"Minute {i + 1}: materials: {collected_materials} robots: {robots_built}")
-    # Step 1: take materials for build
-    for p, collect_material in enumerate(priorities):
-        blueprint_costs = robot_costs[collect_material]
-        if all(collected_materials[m] >= getattr(blueprint_costs, m) for m in materials):
-            # We have the materials; determine if it is desireable to build
-            if p == 0:
-                # Always build the geode robot as soon as we can
-                do_build = True
-            else:
-                cost_higher_prio_robot = {m: getattr(robot_costs[priorities[p - 1]], m) for m in materials}
+# Helper function to determine if a robot can be built with the materials availble
+@functools.cache
+def can_be_built(have, need):
+    return all(h >= n for h, n in zip(have, need))
 
-                collection_times_needed = {}
-                for m in materials:
-                    if robots_built[m] == 0:
-                        collection_times_needed[m] = float("inf") if cost_higher_prio_robot[m] != 0 else 0
-                    else:
-                        collection_times_needed[m] = (cost_higher_prio_robot[m] - collected_materials[m]) / robots_built[m]
+# Helper function to determine robot build options and impact on collected materials
+@functools.cache
+def determine_options(materials_collected, robots_available, blueprint):
+    # Step 0: determine build options (assume we build one robot at the time); not building is also an option
+    robot_build_options = [None] + [i for i, _ in enumerate(materials) if can_be_built(tuple(materials_collected), blueprint[i])]
 
-                time_needed0 = max(collection_times_needed.values())
+    # Prioritize
+    if materials.index("geode") in robot_build_options:
+        robot_build_options = [materials.index("geode")]
+    elif materials.index("obsidian") in robot_build_options:
+        robot_build_options = [materials.index("obsidian")]
+    else:
+        # Ore, clay or not building
+        pass
 
-                collection_times_possible = {}
-                for m in materials:
-                    if m == collect_material:
-                        collection_times_possible[m] = (cost_higher_prio_robot[m] - collected_materials[m]) / (robots_built[m] + 1)
-                    else:
-                        if robots_built[m] == 0:
-                            collection_times_possible[m] = float("inf") if cost_higher_prio_robot[m] != 0 else 0
-                        else:
-                            collection_times_possible[m] = (cost_higher_prio_robot[m] - collected_materials[m]) / robots_built[m]
-                time_needed1 = max(collection_times_possible.values())
+    # Process each option as a simulation step (prefer building over not building)
+    options = []
+    for robot_build_option in robot_build_options[::-1]:
+        opt_materials_collected = list(materials_collected)
 
-                if time_needed1 <= time_needed0:
-                    do_build = True
-                else:
-                    do_build = False
+        # Step 1: take materials for build
+        if robot_build_option is not None:
+            for i, c in enumerate(blueprint[robot_build_option]):
+                opt_materials_collected[i] -= c
 
-            if do_build:
-                for m in materials:
-                    collected_materials[m] -= getattr(blueprint_costs, m)
-                print(f"Building 1 {collect_material}-collecting robot; materials left: {collected_materials}")
-                robot_build_queue.append(collect_material)
-                break
+        # Step 2: collect materials
+        for i, _ in enumerate(materials):
+            opt_materials_collected[i] += robots_available[i]
 
-    # Collect materials
-    for m in materials:
-        collected_materials[m] += robots_built[m]
-    print(f"Materials after collecting: {collected_materials}")
+        # Step 3: build robots
+        opt_robots_available = list(robots_available)
+        if robot_build_option is not None:
+            opt_robots_available[robot_build_option] += 1
 
-    # Actual build
-    while robot_build_queue:
-        r = robot_build_queue.pop(0)
-        robots_built[r] += 1
-        print(f"Built 1 {r} robot; robots available: {robots_built}")
+        options.insert(0, (tuple(opt_materials_collected), tuple(opt_robots_available)))
 
-    print()
-    print()
+    return options
+
+
+# Function to evalute blueprint
+def evaluate_blueprint(blueprint):
+    t_end = 24
+    best_geode_collecting = [0] * t_end
+    initial_materials_collected = (0, 0, 0, 0)
+    initial_robots_built = (1, 0, 0, 0)
+
+    to_process = collections.deque()
+    to_process.appendleft((0, initial_materials_collected, initial_robots_built, []))
+    while to_process:
+        t, materials_collected, robots_available, collected_geodes = to_process.popleft()
+
+        # Determine next step options
+        for option in determine_options(materials_collected, robots_available, blueprint):
+            opt_materials_collected, opt_robots_available = option
+            opt_collected_geodes = collected_geodes.copy()
+            opt_collected_geodes.append(opt_materials_collected[materials.index("geode")])
+
+            # Determine geodes collected at the end
+            if t + 1 == t_end:
+                if opt_collected_geodes[-1] > best_geode_collecting[-1]:
+                    best_geode_collecting = opt_collected_geodes.copy()
+                    print(best_geode_collecting)
+                continue
+
+            # If we're behind, don't continue (we only build one robot per iteration, so we cannot catch up)
+            if opt_collected_geodes[t] >= best_geode_collecting[t]:
+                to_process.appendleft((t + 1, opt_materials_collected, opt_robots_available, opt_collected_geodes))
+
+    return best_geode_collecting[-1]
+
+
+# Part 1: sum of quality levels
+total = 0
+for bpid, blueprint in blueprints.items():
+    determine_options.cache_clear()
+    q = evaluate_blueprint(blueprint)
+    print(can_be_built.cache_info())
+    print(determine_options.cache_info())
+
+    print(f"id={bpid}: q={q}")
+    total += bpid * q
+
+print(f"Sum of quality levels: {total}")
