@@ -66,15 +66,17 @@ start = (0, valley_description[0].index('.'))
 dest = (height - 1, valley_description[height - 1].index('.'))
 
 
+# Helper function to compute all blizzards at time t
 @functools.cache
 def get_blizzard_positions(t):
     return {b.position(t) for b in blizzards}
 
 
+# Helper functions to get all valid non-blizzard neighbor positions from given position
 @functools.cache
 def get_neighbors(t, pos):
     r, c = pos
-    possible_neighbors = []
+    possible_neighbors = [pos]  # waiting in place is an option too and can be faster!
     if pos == start:
         possible_neighbors.append((r + 1, c))
     else:
@@ -92,13 +94,11 @@ def get_neighbors(t, pos):
 
     blizzard_positions = get_blizzard_positions(t)
     allowed_neighbors = [p for p in possible_neighbors if p not in blizzard_positions]
-    if not allowed_neighbors:
-        allowed_neighbors = None
 
     return allowed_neighbors
 
 
-# Breadth-first search to find shortest route to exit
+# Part 1: breadth-first search to find shortest route to exit
 to_process = collections.deque()
 state = (0, start, [start])
 to_process.append(state)
@@ -106,19 +106,11 @@ visited = {(0, start)}
 while to_process:
     t, v, route = to_process.popleft()
     if v == dest:
-        print(f"Reached {v} == {dest} at t={t}")
+        print(f"Reached exit at t={t}")
         break
 
     options = get_neighbors(t + 1, v)
-    if options is None:
-        # Nowhere to go, wait
-        to_process.append((t + 1, v, route + [v]))
-    else:
-        for w in options:
-            if (t + 1, w) not in visited:
-                visited.add((t + 1, w))
-                to_process.append((t + 1, w, route + [w]))
-
-
-# 267 is too low
-# 268 is too low
+    for w in options:
+        if (t + 1, w) not in visited:
+            visited.add((t + 1, w))
+            to_process.append((t + 1, w, route + [w]))
