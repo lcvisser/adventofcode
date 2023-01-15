@@ -38,17 +38,16 @@ def can_be_built(have, need):
 # Helper function to determine robot build options and impact on collected materials
 @functools.cache
 def determine_options(materials_collected, robots_available, blueprint):
-    # Step 0: determine build options (assume we build one robot at the time); not building is also an option
+    # Step 0: determine build options (assume we build one robot at the time)
     robot_build_options = [None] + [i for i, _ in enumerate(materials) if can_be_built(tuple(materials_collected), blueprint[i])]
 
     # Prioritize
-    if materials.index("geode") in robot_build_options:
-        robot_build_options = [materials.index("geode")]
-    elif materials.index("obsidian") in robot_build_options:
-        robot_build_options = [materials.index("obsidian")]
-    else:
-        # Ore, clay or not building
-        pass
+    for i in [0, 1, 2]:
+        if robots_available[i] >= max(c[i] for c in blueprint) and i in robot_build_options:
+            robot_build_options.remove(i)
+
+    if 4 in robot_build_options or 3 in robot_build_options:
+        robot_build_options.remove(None)
 
     # Process each option as a simulation step (prefer building over not building)
     options = []
@@ -77,33 +76,41 @@ def determine_options(materials_collected, robots_available, blueprint):
 # Function to evalute blueprint
 def evaluate_blueprint(blueprint):
     t_end = 24
-    best_geode_collecting = [0] * t_end
+    max_geodes = 0
     initial_materials_collected = (0, 0, 0, 0)
     initial_robots_built = (1, 0, 0, 0)
 
     to_process = collections.deque()
-    to_process.appendleft((0, initial_materials_collected, initial_robots_built, []))
+    to_process.appendleft((0, initial_materials_collected, initial_robots_built))
+    seen = set()
     while to_process:
-        t, materials_collected, robots_available, collected_geodes = to_process.popleft()
+        state = to_process.popleft()
+        if state in seen:
+            continue
+        else:
+            seen.add(state)
+
+        t, materials_collected, robots_available = state
+
+        # Determine geodes collected at the end
+        if t == t_end:
+            if materials_collected[3] > max_geodes:
+                max_geodes = materials_collected[3]
+                print(max_geodes)
+            continue
+
+        geodes_collected = materials_collected[3]
+        time_remaining = t_end - t
+        potential_geodes_to_collect = robots_available[3] * time_remaining + time_remaining * (time_remaining + 1) // 2
+        if geodes_collected + potential_geodes_to_collect < max_geodes:
+            continue
 
         # Determine next step options
         for option in determine_options(materials_collected, robots_available, blueprint):
             opt_materials_collected, opt_robots_available = option
-            opt_collected_geodes = collected_geodes.copy()
-            opt_collected_geodes.append(opt_materials_collected[materials.index("geode")])
+            to_process.appendleft((t + 1, opt_materials_collected, opt_robots_available))
 
-            # Determine geodes collected at the end
-            if t + 1 == t_end:
-                if opt_collected_geodes[-1] > best_geode_collecting[-1]:
-                    best_geode_collecting = opt_collected_geodes.copy()
-                    print(best_geode_collecting)
-                continue
-
-            # If we're behind, don't continue (we only build one robot per iteration, so we cannot catch up)
-            if opt_collected_geodes[t] >= best_geode_collecting[t]:
-                to_process.appendleft((t + 1, opt_materials_collected, opt_robots_available, opt_collected_geodes))
-
-    return best_geode_collecting[-1]
+    return max_geodes
 
 
 # Part 1: sum of quality levels
