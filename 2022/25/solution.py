@@ -72,4 +72,4 @@ total = sum(numbers)
 total_snafu = to_snafu(total)
 print(f"Total: {total_snafu}")
 
-# Part 2: yay!
+# Part 2: no part 2, finished :-)
