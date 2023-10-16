@@ -21,13 +21,16 @@ def from_snafu(s):
     return n
 
 
-# Convert decimal to SNAUF
+# Convert decimal to SNAFU
 def to_snafu(n):
-    # Convert to base 5
+    # Convert to base 5; first find the highest power of 5 that fits n to
+    # determine how many digits are needed
     x = 0
     while 5 ** x - 1 < n:
         x += 1
 
+    # Determine the digits in base 5; start with the highest power and
+    # increase until allowed maximum and then move on to a lower power
     digits = [0]  # at least one digit
     for p in reversed(range(x)):
         d = 0
