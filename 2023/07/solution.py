@@ -16,8 +16,6 @@ for line in data.strip().split('\n'):
     hands.append((hand, int(bid)))
 
 
-CARDS = "123456789TJQKA"
-
 class HandType(enum.IntEnum):
     HIGH_CARD = 0
     ONE_PAIR = 1
@@ -28,16 +26,26 @@ class HandType(enum.IntEnum):
     FIVE_OF_A_KIND = 6
 
 
-def get_hand_type(hand):
-    # Counter.most_common returns a list of N 2-tuples (key, value); maximum compare is 2 (for full house or two pair)
+def get_hand_type(hand, use_jokers=False):
+    # Count cards
     count = collections.Counter(hand)
+
+    # Use jokers to raise the highest count even higher
+    if use_jokers and 'J' in count:
+        num_jokers = count['J']
+        count['J'] = 0
+    else:
+        num_jokers = 0
+
+    # Counter.most_common returns a list of N 2-tuples (key, value); maximum compare is 2 (for full house or two pair)
     highest_counts = count.most_common(2)
-    most_common1 = highest_counts[0][1]
+    most_common1 = highest_counts[0][1] + num_jokers  # no effect if use_jokers == False
     if most_common1 != 5:
         most_common2 = highest_counts[1][1]
     else:
         most_common2 = 0
 
+    # Determine type
     if most_common1 == 5:
         return HandType.FIVE_OF_A_KIND
     elif most_common1 == 4:
@@ -53,9 +61,9 @@ def get_hand_type(hand):
     else:
         return HandType.HIGH_CARD
 
-def hand_compare(hand1, hand2):
-    hand_type1 = get_hand_type(hand1)
-    hand_type2 = get_hand_type(hand2)
+def hand_compare(hand1, hand2, cards, use_jokers=False):
+    hand_type1 = get_hand_type(hand1, use_jokers)
+    hand_type2 = get_hand_type(hand2, use_jokers)
     if hand_type1 != hand_type2:
         # Primary rule (type-based)
         return hand_type1 - hand_type2
@@ -63,15 +71,22 @@ def hand_compare(hand1, hand2):
         # Secondary rule (high-card based)
         for c1, c2 in zip(hand1, hand2):
             if c1 != c2:
-                return CARDS.index(c1) - CARDS.index(c2)
+                return cards.index(c1) - cards.index(c2)
 
         raise RuntimeError
 
-def hand_compare_helper(h1, h2):
-    return hand_compare(h1[0], h2[0])
-
-
 # Part 1: sum of bid times rank
-hands.sort(key=functools.cmp_to_key(hand_compare_helper))
-score = [(r + 1) * b for r, (_, b) in enumerate(hands)]
-print(f"Winnings: {sum(score)}")
+def hand_compare_helper1(h1, h2):
+    cards = "23456789TJQKA"
+    return hand_compare(h1[0], h2[0], cards, use_jokers=False)
+
+score1 = [(r + 1) * b for r, (_, b) in enumerate(sorted(hands, key=functools.cmp_to_key(hand_compare_helper1)))]
+print(f"Winnings: {sum(score1)}")
+
+# Part 2: sum of bid times rank with jokers
+def hand_compare_helper2(h1, h2):
+    cards = "J23456789TQKA"
+    return hand_compare(h1[0], h2[0], cards, use_jokers=True)
+
+score2 = [(r + 1) * b for r, (_, b) in enumerate(sorted(hands, key=functools.cmp_to_key(hand_compare_helper2)))]
+print(f"Winnings with jokers: {sum(score2)}")
