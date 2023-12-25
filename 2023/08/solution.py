@@ -1,5 +1,6 @@
 import sys
 import itertools
+import math
 import re
 
 
@@ -24,16 +25,34 @@ for i, line in enumerate(data.strip().split('\n')):
         right = m.group(3)
         network[node] = (left, right)
 
-# Follow instructions
-n_steps = 0
-curr_node = "AAA"
 direction = {'L': 0, 'R': 1}
+
+# Follow instructions
+n_steps1 = 0
+curr_node = "AAA"
 for d in itertools.cycle(instructions):
-    n_steps += 1
-    next_node = network[curr_node][direction[d]]
-    curr_node = next_node
+    n_steps1 += 1
+    curr_node = network[curr_node][direction[d]]
     if curr_node == "ZZZ":
         break
 
 # Part 1: number of steps to go from AAA to ZZZ
-print(f"Number of steps: {n_steps}")
+print(f"Number of steps: {n_steps1}")
+
+# Follow ghost instructions
+n_steps2 = []
+start_nodes = [n for n in network.keys() if n.endswith('A')]
+end_nodes = [n for n in network.keys() if n.endswith('Z')]
+for c in start_nodes:
+    n_steps2.append(0)
+    curr_node = c
+    for d in itertools.cycle(instructions):
+        n_steps2[-1] += 1
+        curr_node = network[curr_node][direction[d]]
+        # Find a path that ends on a Z node after one or more cycles of the instructions; when found, the least common
+        # multiple of all such cycles is the answer
+        if curr_node in end_nodes and n_steps2[-1] % len(instructions) == 0:
+            break
+
+# Part 2: number of ghost steps from A to Z
+print(f"Number of ghost steps: {math.lcm(*n_steps2)}")
