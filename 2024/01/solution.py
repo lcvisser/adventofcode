@@ -16,3 +16,8 @@ distances = [abs(a - b) for a, b in zip(left_list, right_list)]
 
 # Part 1: sum of distances
 print(f"Sum of distances: {sum(distances)}")
+
+similarity_scores = [a * right_list.count(a) for a in left_list]
+
+# Part 2: similarity score
+print(f"Sum of similarity scores: {sum(similarity_scores)}")
