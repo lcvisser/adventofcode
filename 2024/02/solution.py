@@ -17,11 +17,22 @@ def is_safe(report):
     diff_report = diff(report)
     return all_safely_increasing(diff_report) or all_safely_decreasing(diff_report)
 
-safe_report_count = 0
+safe_report_count1 = 0
+safe_report_count2 = 0
 for line in data.strip().split('\n'):
     report = [int(x) for x in line.split()]
     if is_safe(report):
-        safe_report_count += 1
+        safe_report_count1 += 1
+        safe_report_count2 += 1
+    else:
+        # Try to remove one level and try again
+        for i in range(len(report)):
+            if is_safe(report[:i] + report[i+1:]):
+                safe_report_count2 += 1
+                break
 
 # Part 1: number of safe reports
-print(f"Number of safe reports: {safe_report_count}")
+print(f"Number of safe reports: {safe_report_count1}")
+
+# Part 2: number of safe reports with Problem Dampener
+print(f"Number of safe reports with Problem Dampener: {safe_report_count2}")
