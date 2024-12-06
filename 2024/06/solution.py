@@ -13,6 +13,18 @@ DIRECTIONS = {
 }
 
 
+def new_state(x, y, d, obstacles):
+    dx, dy = DIRECTIONS[d]
+    if (x + dx, y + dy) in obstacles:
+        idx = list(DIRECTIONS.keys()).index(d)
+        idx = (idx + 1) % 4
+        d = list(DIRECTIONS.keys())[idx]
+    else:
+        x, y = x + dx, y + dy
+
+    return x, y, d
+
+
 # Parse grid
 start = None
 obstacles = []
@@ -33,17 +45,10 @@ visited = set()
 visited.add(start)
 
 # Go
-x, y = start
-direction = "up"
+state = (*start, "up")
 while True:
-    dx, dy = DIRECTIONS[direction]
-    if (x + dx, y + dy) in obstacles:
-        idx = list(DIRECTIONS.keys()).index(direction)
-        idx = (idx + 1) % 4
-        direction = list(DIRECTIONS.keys())[idx]
-    else:
-        x, y = x + dx, y + dy
-
+    state = new_state(*state, obstacles)
+    x, y, _ = state
     if x < 0 or x > width or y < 0 or y > height:
         break
     else:
@@ -51,3 +56,35 @@ while True:
 
 # Part 1: number of positions visited
 print(f"Number of positions visited: {len(visited)}")
+
+
+# Helper function to check if there is a loop
+def has_loop(obstacle_x, obstacle_y, start_x, start_y):
+    looped = False
+
+    state = (start_x, start_y, "up")
+    path = [state]
+    while True:
+        state = new_state(*state, obstacles + [(obstacle_x, obstacle_y)])
+
+        x, y, _ = state
+        if x < 0 or x > width or y < 0 or y > height:
+            break
+        elif state in path:
+            looped = True
+            break
+        else:
+            path.append(state)
+
+    return looped
+
+
+# Find loops
+loop_count = 0
+for i, (r, c) in enumerate(visited):
+    if (r, c) != start:
+        if has_loop(r, c, *start):
+            loop_count += 1
+
+# Part 2: Number of positions that result in a loop
+print(f"Number of positions that result in a loop: {loop_count}")
