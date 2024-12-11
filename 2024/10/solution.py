@@ -46,26 +46,33 @@ def get_neighbours_with_value(x, y, v):
     return neighbours
 
 
-def find_number_of_trails(sx, sy):
+def find_trails(sx, sy):
     # Depth-first search starting from (sx, sy)
-    to_visit = [(d, 1) for d in get_neighbours_with_value(sx, sy, 1)]
+    to_visit = [(d, 1, [d]) for d in get_neighbours_with_value(sx, sy, 1)]
     peaks = set()  # unique peaks!
+    paths = set()  # unique paths
     while to_visit:
-        current, value = to_visit.pop(0)
+        current, value, path = to_visit.pop(0)
         if value == 9:
             peaks.add(current)
+            paths.add(tuple(path))
         else:
             for next_step in get_neighbours_with_value(*current, value + 1):
-                to_visit.insert(0, (next_step, value + 1))
+                to_visit.insert(0, (next_step, value + 1, path + [next_step]))
 
-    return len(peaks)
+    return len(peaks), len(paths)
 
 
 # Compute trailhead scores
 trailhead_scores = {}
+trailhead_ratings = {}
 for t in trailheads:
-    number_of_peaks = find_number_of_trails(*t)
+    number_of_peaks, number_of_trails = find_trails(*t)
     trailhead_scores[t] = number_of_peaks
+    trailhead_ratings[t] = number_of_trails
 
 # Part 1: sum of trailhead scores
 print(f"Sum of trailhead scores: {sum(trailhead_scores.values())}")
+
+# Part 2: sum of trailhead ratings
+print(f"Sum of trailhead ratings: {sum(trailhead_ratings.values())}")
