@@ -6,6 +6,29 @@ input_file = "2024/13/input.txt"
 with open(input_file) as f:
     data = f.read()
 
+data = """
+Button A: X+94, Y+34
+Button B: X+22, Y+67
+Prize: X=8400, Y=5400
+
+Button A: X+26, Y+66
+Button B: X+67, Y+21
+Prize: X=12748, Y=12176
+
+Button A: X+17, Y+86
+Button B: X+84, Y+37
+Prize: X=7870, Y=6450
+
+Button A: X+69, Y+23
+Button B: X+27, Y+71
+Prize: X=18641, Y=10279
+"""
+
+OFFSET = 10000000000000
+OFFSET = 0
+
+
+
 button = re.compile(r"[XY]\+(\d+)")
 prize = re.compile(r"[XY]=(\d+)")
 
@@ -24,7 +47,7 @@ for line in data.strip().split('\n'):
         machine["b"] = (int(x_move), int(y_move))
     elif line.startswith("Prize:"):
         x_prize, y_prize = prize.findall(line)
-        machine["prize"] = (int(x_prize), int(y_prize))
+        machine["prize"] = (int(x_prize) + OFFSET, int(y_prize) + OFFSET)
     else:
         machines.append(machine)
         machine = {}
@@ -37,7 +60,7 @@ machine = {}
 #   dxa * na + dxb * nb = px
 #   dya * na + dyb * nb = py
 #
-# These are linear Diophante equations of the form ax + by = c. They have a solution if and only if:
+# These are linear Diophantine equations of the form ax + by = c. They have a solution if and only if:
 #   gcd(a, b) = 0 mod c
 #
 # If it has a solution, it can be found via the Extended Euclidean algorithm, which yields Bezout coefficients s and t
@@ -79,16 +102,22 @@ for m, machine in enumerate(machines):
     dxb, dyb = machine["b"]
     px, py = machine["prize"]
 
+    # Prepare to solve dxa * ax + dxb * bx = px
     gcdx, ax, bx = extended_gcd(dxa, dxb)
+    dx, rx = divmod(px, gcdx)
+
+    # Prepare to solve dya * ay + dyb * by = py
     gcdy, ay, by = extended_gcd(dya, dyb)
-    has_solution = px % gcdx == 0 and py % gcdy == 0
+    dy, ry = divmod(py, gcdy)
+
+    has_solution = rx % gcdx == 0 and ry % gcdy == 0
     if has_solution:
         # Possible solution for x coordinate:
-        kx = px // gcdx
+        kx = rx // gcdx + dx
         nxa0, nxb0 = ax * kx, bx * kx
 
         # Possible solution for y coordinate:
-        ky = py // gcdy
+        ky = ry // gcdy + dy
         nya0, nyb0 = ay * ky, by * ky
 
         # Solutions for the two coordinates, for free nx and ny:
@@ -104,6 +133,7 @@ for m, machine in enumerate(machines):
 
         nx_limits = [nxa0 // (dxb // gcdx), -nxb0 // (dxa // gcdx)]
         ny_limits = [nya0 // (dyb // gcdy), -nyb0 // (dya // gcdy)]
+
         for nx in range(min(nx_limits), max(nx_limits) + 1):
             for ny in range(min(ny_limits), max(ny_limits) + 1):
                 numAx = nxa0 - nx * dxb // gcdx
