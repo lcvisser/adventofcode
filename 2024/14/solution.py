@@ -11,8 +11,13 @@ GRID_HEIGHT = 103
 
 class Robot:
     def __init__(self, p0, v0):
-        self._px, self._py = p0
-        self._vx, self._vy = v0
+        self._p0 = p0
+        self._v0 = v0
+        self.reset()
+
+    def reset(self):
+        self._px, self._py = self._p0
+        self._vx, self._vy = self._v0
 
     def update(self, dt=1):
         self._px = (self._px + dt * self._vx) % GRID_WIDTH
@@ -31,9 +36,8 @@ for line in data.strip().split('\n'):
     robots.append(Robot(p,  v))
 
 # Simulate
-dt = 100
 for i in range(len(robots)):
-    robots[i].update(dt)
+    robots[i].update(100)
 
 # Define quadrants
 q1_limits = [(0, GRID_WIDTH // 2), (0, GRID_HEIGHT // 2)]
@@ -57,3 +61,21 @@ for robot in robots:
 
 # Part 1: product of number of robots per quadrant
 print(f"Safety factor: {prod(quadrant_counts)}")
+
+def print_grid(g):
+    for row in g:
+        print(''.join('.' if x == 0 else str(x) for x in row))
+    print()
+
+t_tree = 8159
+
+grid = [[0] * GRID_WIDTH for _ in range(GRID_HEIGHT)]
+for i in range(len(robots)):
+    robots[i].reset()
+    robots[i].update(t_tree)
+    x, y = robots[i].position
+    grid[y][x] += 1
+
+# Part 2: easter egg
+print_grid(grid)
+print(f"Time of easter egg: {t_tree}")
