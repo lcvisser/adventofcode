@@ -5,6 +5,24 @@ input_file = "2024/20/input.txt"
 with open(input_file) as f:
     data = f.read()
 
+data1 = """
+###############
+#...#...#.....#
+#.#.#.#.#.###.#
+#S#...#.#.#...#
+#######.#.#.###
+#######.#.#...#
+#######.#.###.#
+###..E#...#...#
+###.#######.###
+#...###...#...#
+#.#####.#.###.#
+#.#...#.#.#...#
+#.#.#.#.#.#.###
+#...#...#...###
+###############
+"""
+
 # Parse grid
 grid = []
 height = 0
@@ -51,7 +69,7 @@ nominal_route = find_route(start, end)
 nominal_time = len(nominal_route)
 
 # Find and count cheats
-counter = Counter()
+counter1 = Counter()
 for p, pos in enumerate(nominal_route):
     x, y = pos
     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -61,15 +79,42 @@ for p, pos in enumerate(nominal_route):
                 end_of_cheat = (x + dx2, y + dy2)
                 if end_of_cheat in nominal_route and nominal_route.index(end_of_cheat) > p:
                     saved = (nominal_route.index(end_of_cheat) - p) - 2  # minus 2 for taking the shortcut itself
-                    counter[saved] += 1
+                    counter1[saved] += 1
         except IndexError:
             pass  # out of grid
 
-# Find cheats that save at least 100 picoseconds
-n_cheats = 0
-for saved, n in counter.items():
+# Count cheats that save at least 100 picoseconds
+n_cheats1 = 0
+for saved, n in counter1.items():
     if saved >= 100:
-        n_cheats += n
+        n_cheats1 += n
 
 # Part 1: number of cheats that save at least 100 picoseconds
-print(f"Number of cheats: {n_cheats}")
+print(f"Number of cheats: {n_cheats1}")
+
+# Helper function to compute cheat length
+def dist(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return abs(x1 - x2) + abs(y1 - y2)
+
+
+# Find and count cheats with new rules
+counter2 = Counter()
+for p, pos1 in enumerate(nominal_route):
+    print(f"{p} / {nominal_time}")
+    end_of_cheats = filter(lambda pos2: dist(pos1, pos2) <= 20 and nominal_route.index(pos2) > p, nominal_route)
+    for e in end_of_cheats:
+        d = dist(pos1, e)
+        saved = (nominal_route.index(e) - p) - d
+        if saved >= 50:
+            counter2[saved] += 1
+
+# Count cheats that save at least 100 picoseonds
+n_cheats2 = 0
+for saved, n in counter2.items():
+    if saved >= 100:
+        n_cheats2 += n
+
+# Part 2: number of cheats that save at least 100 picoseconds with the new rules
+print(f"Number of cheats with new rules: {n_cheats2}")
