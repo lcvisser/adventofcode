@@ -7,5 +7,12 @@ secret_key = "bgvyzdsv"
 for i in itertools.count():
     hash = hashlib.md5((secret_key + str(i)).encode()).hexdigest()
     if hash.startswith("00000"):
-        print(f"Number to produce hash: {i} (hash={hash})")
+        print(f"Number to produce hash with 5 zeroes: {i} (hash={hash})")
+        break
+
+# Part 2
+for i in itertools.count():
+    hash = hashlib.md5((secret_key + str(i)).encode()).hexdigest()
+    if hash.startswith("000000"):
+        print(f"Number to produce hash with 6 zeroes: {i} (hash={hash})")
         break
