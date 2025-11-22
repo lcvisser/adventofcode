@@ -69,4 +69,10 @@ def find_next_password(password):
     return new_password
 
 # Part 1
-print(f"New password: {find_next_password("vzbxkghb")}")
+old_password = "vzbxkghb"
+new_password1 = find_next_password(old_password)
+print(f"Change {old_password} -> {new_password1}")
+
+# Part 2
+new_password2 = find_next_password(new_password1)
+print(f"Change password {new_password1} -> {new_password2}")
