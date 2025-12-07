@@ -17,3 +17,18 @@ for a in available.strip().split("\n"):
             break
 
 print(f"Number of fresh ingredients: {num_fresh}")
+
+# Part 2
+num_ids = 0
+last_end = 0
+for start, end in sorted(fresh_id_ranges, key=lambda r: r[0]):
+    if start <= last_end:
+        start = last_end + 1
+
+    if end <= last_end:
+        continue
+
+    num_ids += end - start + 1
+    last_end = end
+
+print(f"Number of fresh IDs: {num_ids}")
