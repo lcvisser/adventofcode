@@ -21,9 +21,10 @@ for first, second in itertools.combinations(junction_boxes, 2):
     heapq.heappush(distances, (d, (first, second)))
 
 circuits = []
+
 num_connections_to_make = 1000
 connections_made = 0
-while connections_made < num_connections_to_make:
+while True:
     _, (first, second) = heapq.heappop(distances)
     first_in_circuit = None
     second_in_circuit = None
@@ -52,12 +53,17 @@ while connections_made < num_connections_to_make:
         del circuits[second_in_circuit]
 
     connections_made += 1
+    if connections_made == num_connections_to_make:
+        # Part 1:
+        sorted_circuits = sorted(circuits, key=lambda c: len(c), reverse=True)
 
-sorted_circuits = sorted(circuits, key=lambda c: len(c), reverse=True)
+        p = 1
+        for i in range(3):
+            p *= len(sorted_circuits[i])
 
-p = 1
-for i in range(3):
-    p *= len(sorted_circuits[i])
+        print(f"Product of lengths of 3 longest circuits: {p}")
 
-# Part 1
-print(f"Product of lengths of 3 longest circuits: {p}")
+    if connections_made > 2 and len(circuits) == 1 and len(circuits[0]) == len(junction_boxes):
+        # Part 2:
+        print(f"Product of x-coordinates of final connection: {first[0] * second[0]}")
+        break
